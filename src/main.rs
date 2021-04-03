@@ -9,8 +9,8 @@ struct Game {
 
 #[derive(Debug,Copy,Clone)]
 struct Piece{
-    loc_x: u8,
-    loc_y: u8,
+    loc_x: u16,
+    loc_y: u16,
     is_active: bool,
     is_kinged: bool,
     is_white: bool
@@ -54,7 +54,7 @@ impl Game {
 }
 
 impl Piece{
-    fn new(x_ : u8, y_ : u8)->Piece{
+    fn new(x_ : u16, y_ : u16)->Piece{
 
         return Piece{
             loc_x: x_,
@@ -70,12 +70,12 @@ impl Piece{
                             self.loc_y, self.is_white);
     }
 
-    fn move_piece(&mut self, new_x:u8, new_y:u8){
+    fn move_piece(&mut self, new_x:u16, new_y:u16){
         self.loc_x = new_x;
         self.loc_y = new_y;
     }
 
-    fn initialize(&mut self, new_x:u8, new_y:u8, is_white_:bool){
+    fn initialize(&mut self, new_x:u16, new_y:u16, is_white_:bool){
         self.loc_x = new_x;
         self.loc_y = new_y;
         self.is_white = is_white_;
@@ -89,7 +89,13 @@ struct Renderer{
     playable_square : char,
     unplayable_square: char,
     white_piece: char,
-    unwhite_piece:char
+    unwhite_piece: char,
+    origin_x: u16,
+    origin_y: u16,
+    info_x: u16,
+    info_y: u16,
+    prompt_x: u16,
+    prompt_y: u16
 }
 
 impl Renderer{
@@ -98,8 +104,14 @@ impl Renderer{
         Renderer{
             playable_square: '#',
             unplayable_square: '#',
-            white_piece: '8',
-            unwhite_piece: '0'
+            white_piece: '0',
+            unwhite_piece: '0',
+            origin_x: 12,
+            origin_y: 12,
+            info_x: 8,
+            info_y: 16,
+            prompt_x: 8,
+            prompt_y:22
         }
     }
 
@@ -115,13 +127,15 @@ impl Renderer{
         for y in 0..8{
             for x in 0..8{
                 if (y%2==0 && x%2==0) || (y%2!=0 && x%2!=0) {
-                    print!("{}{}{}", termion::cursor::Goto(10-x,10-y), 
-                           color::Fg(color::Black),self.playable_square);
+                    print!("{}{}{}", termion::cursor::Goto(self.origin_x-x,
+                                                           self.origin_y-y), 
+                           color::Fg(color::Yellow),self.playable_square);
                     
                 }
                 else {
-                    print!("{}{}{}", termion::cursor::Goto(10-x,10-y), 
-                           color::Fg(color::White),self.unplayable_square);
+                    print!("{}{}{}", termion::cursor::Goto(self.origin_x -x,
+                                                            self.origin_y-y), 
+                           color::Fg(color::Red),self.unplayable_square);
                     
 
                 }
@@ -131,21 +145,40 @@ impl Renderer{
         }
 
         // draw pieces
-        for i in 0..23 {
-            let dx:u8 = game.pieces[i].loc_x;
-            let dy:u8 = game.pieces[i].loc_y;
+        for i in 0..24 {
+            let dx:u16 = game.pieces[i].loc_x;
+            let dy:u16 = game.pieces[i].loc_y;
             let is_white:bool = game.pieces[i].is_white;
-
-            print!("{}{}O",
-                   termion::cursor::Goto(u16::from(10-dy),
-                   u16::from(10-dx)),
-                   color::Fg(color::Red)
+            
+            if is_white {
+                {print!("{}{}{}",
+                   termion::cursor::Goto(u16::from(self.origin_y-dy),
+                   u16::from(self.origin_x-dx)),
+                   color::Fg(color::White),
+                   self.white_piece
                    );
+                }
+            }
+            else{
+                print!("{}{}{}",
+                   termion::cursor::Goto(u16::from(self.origin_y-dy),
+                   u16::from(self.origin_x-dx)),
+                   color::Fg(color::Black),
+                   self.unwhite_piece
+                   );
+             
+            }
+
 
         }
 
-        println!("{}",termion::cursor::Goto(1,30));
+       
 
+    }
+
+    fn print_info(&self, message:String){
+        println!("{}{}",message, termion::cursor::Goto(
+                self.info_x,self.info_y));
 
     }
 }
@@ -154,11 +187,6 @@ fn main() {
     println!("Starting Checkers!");
 
     let game = Game::new();
-
-    for i in 0..23{
-        println!("{}", game.pieces[i].to_string());
-    }
-
     let renderer = Renderer::new();
     renderer.draw(game);
 }
