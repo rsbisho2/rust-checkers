@@ -4,7 +4,9 @@ use std::io::{Write, stdout};
 
 
 struct Game {
-    pieces: [Piece;24]
+    pieces: [Piece;24],
+    active: bool,
+    white_turn:bool
 }
 
 #[derive(Debug,Copy,Clone)]
@@ -22,33 +24,49 @@ impl Game {
         let mut pieces_arr = [Piece::new(0,0);24];
         
         //todo dear god why
-        pieces_arr[0].initialize(0,0,false);
-        pieces_arr[1].initialize(0,2,false);
-        pieces_arr[2].initialize(0,4,false);
-        pieces_arr[3].initialize(0,6,false);
-        pieces_arr[4].initialize(1,1,false);
-        pieces_arr[5].initialize(1,3,false);
-        pieces_arr[6].initialize(1,5,false);
-        pieces_arr[7].initialize(1,7,false);
-        pieces_arr[8].initialize(2,0,false);
-        pieces_arr[9].initialize(2,2,false);
-        pieces_arr[10].initialize(2,4,false);
-        pieces_arr[11].initialize(2,6,false);
+        pieces_arr[0].initialize(0,0,true);
+        pieces_arr[1].initialize(0,2,true);
+        pieces_arr[2].initialize(0,4,true);
+        pieces_arr[3].initialize(0,6,true);
+        pieces_arr[4].initialize(1,1,true);
+        pieces_arr[5].initialize(1,3,true);
+        pieces_arr[6].initialize(1,5,true);
+        pieces_arr[7].initialize(1,7,true);
+        pieces_arr[8].initialize(2,0,true);
+        pieces_arr[9].initialize(2,2,true);
+        pieces_arr[10].initialize(2,4,true);
+        pieces_arr[11].initialize(2,6,true);
 
-        pieces_arr[12].initialize(5,1,true);
-        pieces_arr[13].initialize(5,3,true);
-        pieces_arr[14].initialize(5,5,true);
-        pieces_arr[15].initialize(5,7,true);
-        pieces_arr[16].initialize(6,0,true);
-        pieces_arr[17].initialize(6,2,true);
-        pieces_arr[18].initialize(6,4,true);
-        pieces_arr[19].initialize(6,6,true);
-        pieces_arr[20].initialize(7,1,true);
-        pieces_arr[21].initialize(7,3,true);
-        pieces_arr[22].initialize(7,5,true);
-        pieces_arr[23].initialize(7,7,true);
+        pieces_arr[12].initialize(5,1,false);
+        pieces_arr[13].initialize(5,3,false);
+        pieces_arr[14].initialize(5,5,false);
+        pieces_arr[15].initialize(5,7,false);
+        pieces_arr[16].initialize(6,0,false);
+        pieces_arr[17].initialize(6,2,false);
+        pieces_arr[18].initialize(6,4,false);
+        pieces_arr[19].initialize(6,6,false);
+        pieces_arr[20].initialize(7,1,false);
+        pieces_arr[21].initialize(7,3,false);
+        pieces_arr[22].initialize(7,5,false);
+        pieces_arr[23].initialize(7,7,false);
 
-        return Game{pieces:pieces_arr}
+        return Game{pieces:pieces_arr, active:true, white_turn:true}
+    }
+    fn run(&mut self, renderer:Renderer){
+        renderer.draw(self);
+        while self.active{
+            if self.white_turn {
+                renderer.print_info("It's white's turn:".to_string());
+                
+
+                self.white_turn = false;
+            }
+            else {
+                renderer.print_info("It's black's turn:".to_string());
+
+                self.white_turn = true;
+            }
+        }
     }
 
 }
@@ -109,18 +127,15 @@ impl Renderer{
             origin_x: 12,
             origin_y: 12,
             info_x: 8,
-            info_y: 16,
+            info_y: 14,
             prompt_x: 8,
             prompt_y:22
         }
     }
 
-    fn draw(&self, game:Game){
+    fn draw(&self, game:&Game){
         
         let mut stdout = stdout().into_raw_mode().unwrap();
-
-        // clear screen
-        //print!("{}[2J", 27 as char);
 
         print!("{}", termion::clear::All);
 
@@ -177,17 +192,27 @@ impl Renderer{
     }
 
     fn print_info(&self, message:String){
-        println!("{}{}",message, termion::cursor::Goto(
-                self.info_x,self.info_y));
+        println!("{}{}{}",termion::cursor::Goto(
+                self.info_x,self.info_y),
+                color::Fg(color::White),
+                message);
+
+        print!("{}",termion::cursor::Goto(self.prompt_x, self.prompt_y));
 
     }
 }
 
+
 fn main() {
     println!("Starting Checkers!");
 
-    let game = Game::new();
+    let mut game = Game::new();
     let renderer = Renderer::new();
-    renderer.draw(game);
+    //renderer.draw(game);
+    renderer.print_info(String::from("New game started.  White to move."));
+    
+    game.run(renderer);
+
+    println!("{}Goodbye!",termion::cursor::Goto(1,30));
 }
 
